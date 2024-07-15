@@ -1,13 +1,15 @@
-import {createServer} from 'http';
-import {Server} from 'socket.io';
+// import {createServer} from 'http';
+// import {Server} from 'socket.io';
 import 'dotenv/config';
-const express = require('express');
+import { Socket } from 'socket.io';
+const { Server } = require('socket.io');
+// const express = require('express');
 
-const PORT = process.env.PORT || 3000;
-const app = express();
-const server = createServer(app);
+// const PORT = process.env.PORT || 3000;
+// const app = express();
+// const server = createServer(app);
 
-const io = new Server(server, {
+const io = new Server(process.env.PORT || 3000, {
     cors: {
         origin: process.env.CORS_ORIGIN,
     }
@@ -15,7 +17,7 @@ const io = new Server(server, {
 
 const users = new Map();
 
-io.on('connection', (socket)=>{
+io.on('connection', (socket:Socket)=>{
     console.log('User connected', socket.id);
     socket.on('create-room', (uuid)=>{
         users.set(uuid, new Set([socket.id]));
@@ -82,8 +84,4 @@ io.on('connection', (socket)=>{
         });
         console.log('User disconnected', socket.id);
     });
-})
-
-server.listen(PORT, ()=>{
-    console.log(`Server running on port ${PORT}`);
-})
+});
