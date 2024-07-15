@@ -9,7 +9,7 @@ export const useSocket = ()=>{
 };
 
 export const SocketProvider = (props:any)=>{
-    const socket = useMemo(()=> io('http://localhost:3000'), []);
+    const socket = useMemo(()=> io('https://lomeet-api.vercel.app/'), []);
 
     return(
         <SocketContext.Provider value={socket}>
