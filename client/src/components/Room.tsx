@@ -18,7 +18,6 @@ const Room = () => {
   const [message, setMessage] = useState<string>("");
   const [receivedFile, setReceivedFile] = useState<Blob | null>(null);
   const [receivedFileName, setReceivedFileName] = useState<string>('');
-  const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const messageRef = useRef<HTMLInputElement>(null);
@@ -74,8 +73,8 @@ const Room = () => {
 
   const handleFileInputChange = (e:React.ChangeEvent<HTMLInputElement>)=>{
     if (e.target.files && e.target.files[0]) {
-      if(e.target.files[0].size > 1024 * 1024 * 15){
-        alert('File size should be less than 15MB');
+      if(e.target.files[0].size > 1024 * 1024 * 5){
+        alert('File size should be less than 5MB');
     } else{
       console.log('File selected:', e.target.files[0]);
       handleSendFile(e.target.files[0]);
@@ -93,8 +92,7 @@ const Room = () => {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      // setReceivedFile(null);
-      setDownloadProgress(0);
+      setReceivedFile(null);
     }
   };
 
@@ -152,7 +150,6 @@ const Room = () => {
     const blob = new Blob([new Uint8Array(data)], {type});
     setReceivedFile(blob);
     setReceivedFileName(name);
-    setDownloadProgress(100);
     setChats([...chats, {sender: 'User', message: `File: ${name}`}]);
     console.log('File received:', data);
   },[socket, chats, setReceivedFile, setReceivedFileName]);
@@ -274,10 +271,10 @@ const Room = () => {
         <div className="mt-5">
           <h3>Received File: {receivedFileName}</h3>
           <button className="bg-blue-500 px-2 py-1 rounded mt-2" onClick={handelDownloadFile}>Download File</button>
-          <div className="mt-2">
+          {/* <div className="mt-2">
             <progress value={downloadProgress} max="100"></progress>
             <span>{downloadProgress.toFixed(2)}%</span>
-          </div>
+          </div> */}
         </div>
       )}
       {uploadProgress > 0 && (
