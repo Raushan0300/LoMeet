@@ -41,6 +41,32 @@ io.on('connection', (socket)=>{
         socket.to(uuid).emit('receive-message', {uuid, message});
     });
 
+    // socket.on('send-file', (fileData, callback)=>{
+    //     console.log('File received:', fileData.name);
+    //     socket.broadcast.emit('receive-file', fileData);
+    //     callback('File received');
+    // });
+
+    let receivedChunks: { [key: string]: Uint8Array[] } = {};
+  let receivedFileInfo: { [key: string]: any } = {};
+
+    socket.on('send-file-chunk', ({chunkData, uuid}, callback)=>{
+        const {fileId, name, type, chunk, isLastChunk} = chunkData;
+        if(!receivedChunks[fileId]){
+            receivedChunks[fileId] = [];
+            receivedFileInfo[fileId] = {name, type};
+        };
+        receivedChunks[fileId].push(new Uint8Array(chunk));
+
+        if(isLastChunk){
+            const fileBuffer = new Uint8Array(receivedChunks[fileId].reduce((acc: any, val)=>acc.concat(Array.from(val)), []));
+            socket.to(uuid).emit('receive-file', {name:receivedFileInfo[fileId].name, type:receivedFileInfo[fileId].type, data: fileBuffer});
+            delete receivedChunks[fileId];
+            delete receivedFileInfo[fileId];
+        }
+        callback('Chunk received');
+    });
+
 
     socket.on('disconnect', () => {
         // Remove the user from all rooms they were part of
