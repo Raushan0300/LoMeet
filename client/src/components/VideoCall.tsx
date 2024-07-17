@@ -210,7 +210,7 @@ const VideoCall = (props: any) => {
           <video
             ref={localVideoRef}
             autoPlay
-            // muted
+            muted
             style={{ width: "100%", height: "100%" }}></video>
         </div>
       </div>
