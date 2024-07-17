@@ -65,6 +65,26 @@ io.on("connection", (socket: Socket) => {
     callback("Chunk received");
   });
 
+  socket.on("initiate-call", ({ to, from }) => {
+    socket.to(to).emit("receive-call", { from });
+  });
+
+  socket.on("accept-call", ({ uuid, from }) => {
+    socket.to(uuid).emit("call-accepted", { from });
+  });
+
+  socket.on("offer", ({ offer, uuid }) => {
+    socket.to(uuid).emit("offer", { offer, from: socket.id });
+  });
+
+  socket.on("answer", ({ answer, uuid }) => {
+    socket.to(uuid).emit("answer", { answer, from: socket.id });
+  });
+
+  socket.on("ice-candidate", ({ candidate, uuid }) => {
+    socket.to(uuid).emit("ice-candidate", { candidate, from: socket.id });
+  });
+
   socket.on("disconnect", () => {
     users.forEach((value, key) => {
       if (value.has(socket.id)) {

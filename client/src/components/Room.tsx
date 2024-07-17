@@ -9,6 +9,7 @@ import { useParams } from "react-router-dom";
 import { useSocket } from "./context/SocketProvider";
 import { CirclesWithBar } from "react-loader-spinner";
 import { v4 as uuidv4 } from "uuid";
+import VideoCall from "./VideoCall";
 
 const Room = () => {
   const { room = "" } = useParams<{ room: string }>();
@@ -19,6 +20,11 @@ const Room = () => {
   const [receivedFile, setReceivedFile] = useState<Blob | null>(null);
   const [receivedFileName, setReceivedFileName] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+
+  const [isCalling, setIsCalling] = useState<boolean>(false);
+  const [isReceivingCall, setIsReceivingCall] = useState<boolean>(false);
+  const [callAccepted, setCallAccepted] = useState<boolean>(false);
+  const [caller, setCaller] = useState<string>("");
 
   const messageRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -164,6 +170,21 @@ const Room = () => {
     [socket, chats, setReceivedFile, setReceivedFileName]
   );
 
+  const initiateCall = () => {
+    if (remoteSocketId) {
+      if(!isReceivingCall){
+        socket?.emit("initiate-call", { to: remoteSocketId, from: socket.id });
+      setIsCalling(true);
+      }
+    }
+  };
+
+  const acceptCall = () => {
+    setCallAccepted(true);
+    setIsReceivingCall(false);
+    socket?.emit("accept-call", { uuid: room, from: socket.id });
+  };
+
   const scrollToBottom = () => {
     messageRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -179,12 +200,22 @@ const Room = () => {
     socket?.on("user-left", handleUserLeft);
     socket?.on("receive-message", handleRecieveMessage);
     socket?.on("receive-file", handleRecieveFile);
+    socket.on("receive-call", ({ from }) => {
+      setIsReceivingCall(true);
+      setCaller(from);
+    });
+    socket.on("call-accepted", ({ from }) => {
+      setCallAccepted(true);
+      setIsCalling(false);
+      console.log("Call accepted from:", from);
+    });
 
     return () => {
       socket?.off("user-joined", handleUserJoined);
       socket?.off("user-left", handleUserLeft);
       socket?.off("receive-message", handleRecieveMessage);
       socket?.off("receive-file", handleRecieveFile);
+      socket.off("receive-call");
     };
   }, [
     socket,
@@ -193,10 +224,13 @@ const Room = () => {
     handleRecieveMessage,
     handleSendMessage,
     handleRecieveFile,
+    setIsCalling,
+    setCaller
   ]);
 
   return (
-    <div className="px-52 py-10">
+    <div>
+    {callAccepted?<VideoCall room={room} />:(<div className="px-52 py-10">
       <h1 className="text-4xl font-bold text-center text-neutral-50">
         LoMeet - Your private room
       </h1>
@@ -216,7 +250,7 @@ const Room = () => {
             )}
           </div>
           <div className="flex gap-10">
-            <VideoCallIcon className="cursor-pointer" />
+            <VideoCallIcon className="cursor-pointer" onClick={initiateCall} />
             <CallIcon className="cursor-pointer" />
           </div>
         </div>
@@ -284,6 +318,13 @@ const Room = () => {
           </form>
         )}
       </div>
+      {isCalling && <p>Calling...</p>}
+      {isReceivingCall && (
+        <div>
+          <p>Incoming call from {caller}</p>
+          <button onClick={acceptCall}>Accept</button>
+        </div>
+      )}
       {receivedFile && (
         <div className="mt-5">
           <h3>Received File: {receivedFileName}</h3>
@@ -292,10 +333,6 @@ const Room = () => {
             onClick={handelDownloadFile}>
             Download File
           </button>
-          {/* <div className="mt-2">
-            <progress value={downloadProgress} max="100"></progress>
-            <span>{downloadProgress.toFixed(2)}%</span>
-          </div> */}
         </div>
       )}
       {uploadProgress > 0 && (
@@ -307,6 +344,7 @@ const Room = () => {
           <span>{uploadProgress.toFixed(2)}%</span>
         </div>
       )}
+    </div>)}
     </div>
   );
 };
