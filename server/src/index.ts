@@ -85,6 +85,14 @@ io.on("connection", (socket: Socket) => {
     socket.to(uuid).emit("ice-candidate", { candidate, from: socket.id });
   });
 
+  socket.on("end-call", ({uuid, from})=>{
+    socket.to(uuid).emit("end-call", {from});
+  });
+
+  socket.on("toggle-video", ({uuid, isVideoEnabled})=>{
+    socket.to(uuid).emit("toggle-video", {from: socket.id, isVideoEnabled});
+  })
+
   socket.on("disconnect", () => {
     users.forEach((value, key) => {
       if (value.has(socket.id)) {

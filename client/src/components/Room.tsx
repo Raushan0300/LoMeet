@@ -32,7 +32,7 @@ const Room = () => {
   const socket = useSocket();
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`http://localhost:5173/${room}`);
+    navigator.clipboard.writeText(`https://lomeet.raushan.xyz/${room}`);
     setCopied(true);
     setTimeout(() => {
       setCopied(false);
@@ -185,6 +185,12 @@ const Room = () => {
     socket?.emit("accept-call", { uuid: room, from: socket.id });
   };
 
+  const callEnded=()=>{
+    setCallAccepted(false);
+    setIsReceivingCall(false);
+    socket?.emit("end-call", { uuid: room, from: socket.id });
+  };
+
   const scrollToBottom = () => {
     messageRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -209,6 +215,11 @@ const Room = () => {
       setIsCalling(false);
       console.log("Call accepted from:", from);
     });
+    socket.on("end-call", ({from}) => {
+      setCallAccepted(false);
+    setIsReceivingCall(false);
+      console.log("Call ended by:", from);
+    });
 
     return () => {
       socket?.off("user-joined", handleUserJoined);
@@ -230,7 +241,7 @@ const Room = () => {
 
   return (
     <div>
-    {callAccepted?<VideoCall room={room} />:(<div className="px-52 py-10">
+    {callAccepted?<VideoCall room={room} callEnded={callEnded} />:(<div className="px-52 py-10">
       <h1 className="text-4xl font-bold text-center text-neutral-50">
         LoMeet - Your private room
       </h1>
@@ -318,11 +329,11 @@ const Room = () => {
           </form>
         )}
       </div>
-      {isCalling && <p>Calling...</p>}
+      {isCalling && <p className="mt-5">Calling...</p>}
       {isReceivingCall && (
-        <div>
+        <div className="mt-5">
           <p>Incoming call from {caller}</p>
-          <button onClick={acceptCall}>Accept</button>
+          <button className="bg-green-500 px-5 py-1 mt-2 rounded" onClick={acceptCall}>Accept</button>
         </div>
       )}
       {receivedFile && (
