@@ -8,7 +8,7 @@ import SendIcon from "@mui/icons-material/Send";
 import { useParams } from "react-router-dom";
 import { useSocket } from "./context/SocketProvider";
 import { CirclesWithBar } from "react-loader-spinner";
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 const Room = () => {
   const { room = "" } = useParams<{ room: string }>();
@@ -17,7 +17,7 @@ const Room = () => {
   const [chats, setChats] = useState<any[]>([]);
   const [message, setMessage] = useState<string>("");
   const [receivedFile, setReceivedFile] = useState<Blob | null>(null);
-  const [receivedFileName, setReceivedFileName] = useState<string>('');
+  const [receivedFileName, setReceivedFileName] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const messageRef = useRef<HTMLInputElement>(null);
@@ -33,36 +33,40 @@ const Room = () => {
     }, 4000);
   };
 
-  const handleSendFile = (file:any)=>{
-    if(file){
-      console.log('Sending file:', file);
+  const handleSendFile = (file: any) => {
+    if (file) {
+      console.log("Sending file:", file);
       const fileId = uuidv4();
       const chunkSize = 64 * 1024;
       let offset = 0;
-      const sendNextChunk = () =>{
+      const sendNextChunk = () => {
         const chunk = file.slice(offset, offset + chunkSize);
         const reader = new FileReader();
 
-        reader.onload = (e)=>{
-          if(e.target && e.target.result){
+        reader.onload = (e) => {
+          if (e.target && e.target.result) {
             const isLastChunk = offset + chunkSize >= file.size;
             const chunkData = {
               fileId,
               name: file.name,
               type: file.type,
               chunk: Array.from(new Uint8Array(e.target.result as ArrayBuffer)),
-              isLastChunk
+              isLastChunk,
             };
-            socket?.emit('send-file-chunk', {uuid:room ,chunkData}, (response: string)=>{
-              console.log('Chunk sent:', response);
-              if(!isLastChunk){
-                offset += chunkSize;
-                setUploadProgress((offset / file.size) * 100);
-                setTimeout(sendNextChunk, 100);
-              } else{
-                setUploadProgress(100);
+            socket?.emit(
+              "send-file-chunk",
+              { uuid: room, chunkData },
+              (response: string) => {
+                console.log("Chunk sent:", response);
+                if (!isLastChunk) {
+                  offset += chunkSize;
+                  setUploadProgress((offset / file.size) * 100);
+                  setTimeout(sendNextChunk, 100);
+                } else {
+                  setUploadProgress(100);
+                }
               }
-            });
+            );
           }
         };
         reader.readAsArrayBuffer(chunk);
@@ -71,22 +75,25 @@ const Room = () => {
     }
   };
 
-  const handleFileInputChange = (e:React.ChangeEvent<HTMLInputElement>)=>{
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      if(e.target.files[0].size > 1024 * 1024 * 5){
-        alert('File size should be less than 5MB');
-    } else{
-      console.log('File selected:', e.target.files[0]);
-      handleSendFile(e.target.files[0]);
-      setChats([...chats, { sender: "You", message: `File: ${e.target.files[0].name}` }]);
+      if (e.target.files[0].size > 1024 * 1024 * 5) {
+        alert("File size should be less than 5MB");
+      } else {
+        console.log("File selected:", e.target.files[0]);
+        handleSendFile(e.target.files[0]);
+        setChats([
+          ...chats,
+          { sender: "You", message: `File: ${e.target.files[0].name}` },
+        ]);
+      }
     }
-  }
   };
 
   const handelDownloadFile = () => {
-    if(receivedFile){
+    if (receivedFile) {
       const url = URL.createObjectURL(receivedFile);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = receivedFileName;
       document.body.appendChild(a);
@@ -96,9 +103,9 @@ const Room = () => {
     }
   };
 
-  const handleAttachFileClick = ()=>{
+  const handleAttachFileClick = () => {
     fileInputRef.current?.click();
-  }
+  };
 
   const handleJoinRoom = useCallback(() => {
     console.log("Joining room with ID:", room);
@@ -145,14 +152,17 @@ const Room = () => {
     [socket, chats]
   );
 
-  const handleRecieveFile = useCallback((fileData:any)=>{
-    const { name, type, data } = fileData;
-    const blob = new Blob([new Uint8Array(data)], {type});
-    setReceivedFile(blob);
-    setReceivedFileName(name);
-    setChats([...chats, {sender: 'User', message: `File: ${name}`}]);
-    console.log('File received:', data);
-  },[socket, chats, setReceivedFile, setReceivedFileName]);
+  const handleRecieveFile = useCallback(
+    (fileData: any) => {
+      const { name, type, data } = fileData;
+      const blob = new Blob([new Uint8Array(data)], { type });
+      setReceivedFile(blob);
+      setReceivedFileName(name);
+      setChats([...chats, { sender: "User", message: `File: ${name}` }]);
+      console.log("File received:", data);
+    },
+    [socket, chats, setReceivedFile, setReceivedFileName]
+  );
 
   const scrollToBottom = () => {
     messageRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -168,13 +178,13 @@ const Room = () => {
     socket?.on("user-joined", handleUserJoined);
     socket?.on("user-left", handleUserLeft);
     socket?.on("receive-message", handleRecieveMessage);
-    socket?.on('receive-file', handleRecieveFile);
+    socket?.on("receive-file", handleRecieveFile);
 
     return () => {
       socket?.off("user-joined", handleUserJoined);
       socket?.off("user-left", handleUserLeft);
       socket?.off("receive-message", handleRecieveMessage);
-      socket?.off('receive-file', handleRecieveFile);
+      socket?.off("receive-file", handleRecieveFile);
     };
   }, [
     socket,
@@ -182,7 +192,7 @@ const Room = () => {
     handleUserLeft,
     handleRecieveMessage,
     handleSendMessage,
-    handleRecieveFile
+    handleRecieveFile,
   ]);
 
   return (
@@ -245,10 +255,17 @@ const Room = () => {
           <form
             className="px-5 py-2 border-t flex justify-between items-center gap-5"
             onSubmit={handleSendMessage}>
-            <div className="cursor-pointer" onClick={handleAttachFileClick}>
-            <AttachFileIcon />
+            <div
+              className="cursor-pointer"
+              onClick={handleAttachFileClick}>
+              <AttachFileIcon />
             </div>
-            <input type="file" ref={fileInputRef} style={{display: 'none'}} onChange={handleFileInputChange} />
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileInputChange}
+            />
             <input
               type="text"
               placeholder="Enter Your Message"
@@ -270,7 +287,11 @@ const Room = () => {
       {receivedFile && (
         <div className="mt-5">
           <h3>Received File: {receivedFileName}</h3>
-          <button className="bg-blue-500 px-2 py-1 rounded mt-2" onClick={handelDownloadFile}>Download File</button>
+          <button
+            className="bg-blue-500 px-2 py-1 rounded mt-2"
+            onClick={handelDownloadFile}>
+            Download File
+          </button>
           {/* <div className="mt-2">
             <progress value={downloadProgress} max="100"></progress>
             <span>{downloadProgress.toFixed(2)}%</span>
@@ -279,8 +300,10 @@ const Room = () => {
       )}
       {uploadProgress > 0 && (
         <div className="flex gap-2 mt-5 items-center">
-          <span>{uploadProgress<100?"Sending File:":"File Sent:"}</span>
-          <progress value={uploadProgress} max="100"></progress>
+          <span>{uploadProgress < 100 ? "Sending File:" : "File Sent:"}</span>
+          <progress
+            value={uploadProgress}
+            max="100"></progress>
           <span>{uploadProgress.toFixed(2)}%</span>
         </div>
       )}
