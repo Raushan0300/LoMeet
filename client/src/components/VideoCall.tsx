@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import MicOffIcon from '@mui/icons-material/MicOff';
@@ -10,7 +10,7 @@ const VideoCall = (props:any) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  // const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
 
   // const [isMuted, setIsMuted] = useState(true);
@@ -38,7 +38,7 @@ const VideoCall = (props:any) => {
       };
 
       peerConnection.ontrack = event => {
-        setRemoteStream(event.streams[0]);
+        // setRemoteStream(event.streams[0]);
         if (remoteVideoRef.current) {
           // console.log(event.streams[0]);
           remoteVideoRef.current.srcObject = event.streams[0];
