@@ -204,13 +204,13 @@ const VideoCall = (props: any) => {
         <video
           ref={remoteVideoRef}
           autoPlay
-          muted
+          // muted
           style={{ width: "100%", height: "85vh" }}></video>
         <div className="absolute bottom-5 right-10 h-48 w-48 z-10">
           <video
             ref={localVideoRef}
             autoPlay
-            muted
+            // muted
             style={{ width: "100%", height: "100%" }}></video>
         </div>
       </div>
