@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import CallEndIcon from '@mui/icons-material/CallEnd';
-import VideocamOffIcon from '@mui/icons-material/VideocamOff';
-import MicOffIcon from '@mui/icons-material/MicOff';
-import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
-import ScreenShareIcon from '@mui/icons-material/ScreenShare';
-import { useSocket } from './context/SocketProvider';
+import { useEffect, useRef, useState } from "react";
+import CallEndIcon from "@mui/icons-material/CallEnd";
+import VideocamOffIcon from "@mui/icons-material/VideocamOff";
+import MicOffIcon from "@mui/icons-material/MicOff";
+import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
+import ScreenShareIcon from "@mui/icons-material/ScreenShare";
+import { useSocket } from "./context/SocketProvider";
 
-const VideoCall = (props:any) => {
+const VideoCall = (props: any) => {
   const { room, callEnded } = props;
   const socket = useSocket();
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -21,27 +21,33 @@ const VideoCall = (props:any) => {
 
   useEffect(() => {
     const startCall = async () => {
-      localStreamRef.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStreamRef.current = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
 
       if (localVideoRef.current && localStreamRef.current) {
         localVideoRef.current.srcObject = localStreamRef.current;
-        localVideoRef.current.muted = true; // Ensure local video is muted
+        localVideoRef.current.muted = true;
       }
 
       const peerConnection = new RTCPeerConnection();
       peerConnectionRef.current = peerConnection;
 
-      localStreamRef.current.getTracks().forEach(track => {
+      localStreamRef.current.getTracks().forEach((track) => {
         peerConnection.addTrack(track, localStreamRef.current!);
       });
 
-      peerConnection.onicecandidate = event => {
+      peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-          socket?.emit("ice-candidate", { candidate: event.candidate, uuid: room });
+          socket?.emit("ice-candidate", {
+            candidate: event.candidate,
+            uuid: room,
+          });
         }
       };
 
-      peerConnection.ontrack = event => {
+      peerConnection.ontrack = (event) => {
         setRemoteStream(event.streams[0]);
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = event.streams[0];
@@ -53,14 +59,18 @@ const VideoCall = (props:any) => {
       socket?.emit("offer", { offer, uuid: room });
 
       socket?.on("offer", async ({ offer }) => {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        await peerConnection.setRemoteDescription(
+          new RTCSessionDescription(offer)
+        );
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
         socket?.emit("answer", { answer, uuid: room });
       });
 
       socket?.on("answer", async ({ answer }) => {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        await peerConnection.setRemoteDescription(
+          new RTCSessionDescription(answer)
+        );
       });
 
       socket?.on("ice-candidate", async ({ candidate }) => {
@@ -74,7 +84,7 @@ const VideoCall = (props:any) => {
 
     return () => {
       if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
+        localStreamRef.current.getTracks().forEach((track) => track.stop());
       }
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
@@ -87,7 +97,7 @@ const VideoCall = (props:any) => {
 
   const toggleVideo = () => {
     if (localStreamRef.current) {
-      localStreamRef.current.getVideoTracks().forEach(track => {
+      localStreamRef.current.getVideoTracks().forEach((track) => {
         if (track.enabled) {
           track.stop();
           socket?.emit("toggle-video", { uuid: room, isVideoEnabled: false });
@@ -95,16 +105,22 @@ const VideoCall = (props:any) => {
             localVideoRef.current.srcObject = null;
           }
         } else {
-          navigator.mediaDevices.getUserMedia({ video: true }).then(newStream => {
-            const newTrack = newStream.getVideoTracks()[0];
-            const sender = peerConnectionRef.current
-              ?.getSenders()
-              .find((s) => s.track?.kind === 'video');
-            sender?.replaceTrack(newTrack);
-            localStreamRef.current?.addTrack(newTrack);
-            localVideoRef.current!.srcObject = localStreamRef.current;
-            socket?.emit("toggle-video", { uuid: room, isVideoEnabled: true });
-          });
+          navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then((newStream) => {
+              const newTrack = newStream.getVideoTracks()[0];
+              const sender = peerConnectionRef.current
+                ?.getSenders()
+                .find((s) => s.track?.kind === "video");
+              sender?.replaceTrack(newTrack);
+              localStreamRef.current?.removeTrack(track);
+              localStreamRef.current?.addTrack(newTrack);
+              localVideoRef.current!.srcObject = localStreamRef.current;
+              socket?.emit("toggle-video", {
+                uuid: room,
+                isVideoEnabled: true,
+              });
+            });
         }
         track.enabled = !track.enabled;
         setIsVideoEnabled(track.enabled);
@@ -114,7 +130,7 @@ const VideoCall = (props:any) => {
 
   const toggleAudio = () => {
     if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach(track => {
+      localStreamRef.current.getAudioTracks().forEach((track) => {
         track.enabled = !track.enabled;
         setIsAudioEnabled(track.enabled);
       });
@@ -124,7 +140,9 @@ const VideoCall = (props:any) => {
   const startScreenShare = async () => {
     if (localStreamRef.current) {
       try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+        });
         const screenTrack = screenStream.getVideoTracks()[0];
 
         screenTrack.onended = () => {
@@ -133,7 +151,7 @@ const VideoCall = (props:any) => {
 
         const sender = peerConnectionRef.current
           ?.getSenders()
-          .find((s) => s.track?.kind === 'video');
+          .find((s) => s.track?.kind === "video");
         sender?.replaceTrack(screenTrack);
 
         localVideoRef.current!.srcObject = screenStream;
@@ -150,7 +168,7 @@ const VideoCall = (props:any) => {
 
       const sender = peerConnectionRef.current
         ?.getSenders()
-        .find((s) => s.track?.kind === 'video');
+        .find((s) => s.track?.kind === "video");
       sender?.replaceTrack(videoTrack);
 
       localVideoRef.current!.srcObject = localStreamRef.current;
@@ -160,7 +178,7 @@ const VideoCall = (props:any) => {
 
   const endCall = () => {
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
     }
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
@@ -187,22 +205,41 @@ const VideoCall = (props:any) => {
         <video
           ref={remoteVideoRef}
           autoPlay
-          style={{ width: '100%', height: '85vh' }}
-        ></video>
+          // muted
+          style={{ width: "100%", height: "85vh" }}></video>
         <div className="absolute bottom-5 right-10 h-48 w-48 z-10">
           <video
             ref={localVideoRef}
             autoPlay
             muted
-            style={{ width: '100%', height: '100%' }}
-          ></video>
+            style={{ width: "100%", height: "100%" }}></video>
         </div>
       </div>
       <div className="flex gap-5 mt-5">
-        <button className="bg-red-500 px-4 py-2 rounded-full text-neutral-50" onClick={endCall}><CallEndIcon /></button>
-        <button className={`${isVideoEnabled ? "bg-neutral-500" : "bg-red-500"} px-4 py-2 rounded-full text-neutral-50`} onClick={toggleVideo}><VideocamOffIcon /></button>
-        <button className={`${isAudioEnabled ? "bg-neutral-500" : "bg-red-500"} px-4 py-2 rounded-full text-neutral-50`} onClick={toggleAudio}><MicOffIcon /></button>
-        <button className={`px-4 py-2 rounded-full text-neutral-50 ${isScreenSharing ? 'bg-red-500' : 'bg-neutral-500'}`} onClick={isScreenSharing ? stopScreenShare : startScreenShare}>
+        <button
+          className="bg-red-500 px-4 py-2 rounded-full text-neutral-50"
+          onClick={endCall}>
+          <CallEndIcon />
+        </button>
+        <button
+          className={`${
+            isVideoEnabled ? "bg-neutral-500" : "bg-red-500"
+          } px-4 py-2 rounded-full text-neutral-50`}
+          onClick={toggleVideo}>
+          <VideocamOffIcon />
+        </button>
+        <button
+          className={`${
+            isAudioEnabled ? "bg-neutral-500" : "bg-red-500"
+          } px-4 py-2 rounded-full text-neutral-50`}
+          onClick={toggleAudio}>
+          <MicOffIcon />
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full text-neutral-50 ${
+            isScreenSharing ? "bg-red-500" : "bg-neutral-500"
+          }`}
+          onClick={isScreenSharing ? stopScreenShare : startScreenShare}>
           {isScreenSharing ? <StopScreenShareIcon /> : <ScreenShareIcon />}
         </button>
       </div>
