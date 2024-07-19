@@ -99,7 +99,22 @@ const VideoCall = (props: any) => {
     if (localStreamRef.current) {
       localStreamRef.current.getVideoTracks().forEach((track) => {
         if (track.enabled) {
+          console.log(localStreamRef.current?.getVideoTracks())
           track.stop();
+          // navigator.mediaDevices.getUserMedia({ video: false, audio: true }).then((newStream) => {
+          //   const newTrack = newStream.getVideoTracks()[0];
+          //   const sender = peerConnectionRef.current
+          //     ?.getSenders()
+          //     .find((s) => s.track?.kind === "video");
+          //   sender?.replaceTrack(newTrack);
+          //   localStreamRef.current?.removeTrack(track);
+          //   localStreamRef.current?.addTrack(newTrack);
+          //   localVideoRef.current!.srcObject = localStreamRef.current;
+          //   socket?.emit("toggle-video", {
+          //     uuid: room,
+          //     isVideoEnabled: false,
+          //   });
+          // });
           socket?.emit("toggle-video", { uuid: room, isVideoEnabled: false });
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = null;
@@ -124,6 +139,7 @@ const VideoCall = (props: any) => {
         }
         track.enabled = !track.enabled;
         setIsVideoEnabled(track.enabled);
+        console.log(localStreamRef.current?.getVideoTracks());
       });
     }
   };
